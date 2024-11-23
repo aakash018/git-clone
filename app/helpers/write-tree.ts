@@ -24,7 +24,7 @@ export const add = ({
     fs.readdirSync(path).forEach((dir) => {
         if (
             dir === ".vcs" ||
-            dir === ".vcs" ||
+            dir === ".git" ||
             dir === "node_modules"
         ) return
         const dirLoc = `${path}/${dir}`
@@ -36,7 +36,17 @@ export const add = ({
 
             // If the file is already staged 
             if (indexJson.find(ind => ind.hash === fileHash)) {
-                console.log("unmodified", dirLoc)
+                if (indexJson.find(ind => ind.path !== dirLoc)) {
+                    indexJson.push({
+                        path: dirLoc,
+                        hash: fileHash,
+                        cti: file.ctime,
+                        mti: file.mtime,
+                        size: file.size
+                    })
+                } else {
+                    console.log("unmodified", dirLoc)
+                }
 
                 // If the file was modufied
             } else if (indexJson.find(ind => ind.path === dirLoc)) {
@@ -54,7 +64,7 @@ export const add = ({
                     }
                 })
                 indexJson = nepJson
-                saveBlob(dirLoc)
+                saveBlob(dirLoc, "blob")
                 // if it is a new file
             } else {
                 console.log("added", dirLoc)
@@ -65,7 +75,7 @@ export const add = ({
                     size: file.size,
                     mti: file.mtime
                 })
-                saveBlob(dirLoc)
+                saveBlob(dirLoc, "blob")
             }
             fs.writeFileSync(".vcs/index.json", JSON.stringify(indexJson))
         } else if (file.isSymbolicLink()) {

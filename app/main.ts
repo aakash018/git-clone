@@ -1,3 +1,4 @@
+import "dotenv/config"
 import * as fs from 'fs';
 import crypto from "crypto"
 import zlib from "zlib"
@@ -27,7 +28,9 @@ switch (command) {
         fs.mkdirSync(".vcs", { recursive: true });
         fs.mkdirSync(".vcs/objects", { recursive: true });
         fs.mkdirSync(".vcs/refs", { recursive: true });
+        fs.mkdirSync(".vcs/refs/heads", { recursive: true })
         fs.writeFileSync(".vcs/HEAD", "ref: refs/heads/main\n");
+        fs.writeFileSync(".vcs/refs/heads/main", "")
         fs.writeFileSync(".vcs/index.json", "[]")
         console.log("Initialized.vcs directory");
         break;
@@ -68,7 +71,12 @@ switch (command) {
         getStatus(".")
         break
     case Commands.Commit:
-        commit()
+        const message = args[1]
+        if (!message) {
+            console.error("You fotgot to supply a commit message")
+            break
+        }
+        commit(message)
         break
     default:
         throw new Error(`Unknown command ${command}`);
