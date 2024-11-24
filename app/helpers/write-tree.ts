@@ -3,6 +3,7 @@ import type { IndexType } from "../../types/index-type"
 import { getHash } from "./getHash"
 import { hash } from "bun"
 import { saveBlob } from "./save-blod"
+import chalk from "chalk"
 const indexPath = ".vcs/index.json"
 let indexJson: IndexType[] = []
 
@@ -16,6 +17,8 @@ if (fs.existsSync(indexPath)) {
     indexJson = [] // or handle it as needed
 }
 
+
+const allDirs: string[] = []
 export const add = ({
     path
 }: {
@@ -28,6 +31,7 @@ export const add = ({
             dir === "node_modules"
         ) return
         const dirLoc = `${path}/${dir}`
+        allDirs.push(dirLoc)
         const file = fs.statSync(dirLoc)
         if (file.isDirectory()) {
             add({ path: dirLoc })
@@ -36,6 +40,7 @@ export const add = ({
 
             // If the file is already staged 
             if (indexJson.find(ind => ind.hash === fileHash)) {
+                //same content in different files
                 if (indexJson.find(ind => ind.path !== dirLoc)) {
                     indexJson.push({
                         path: dirLoc,
@@ -66,7 +71,7 @@ export const add = ({
                 indexJson = nepJson
                 saveBlob(dirLoc, "blob")
                 // if it is a new file
-            } else {
+            } else if (!indexJson.some(index => index.path === dirLoc)) {
                 console.log("added", dirLoc)
                 indexJson.push({
                     hash: fileHash,
@@ -77,9 +82,11 @@ export const add = ({
                 })
                 saveBlob(dirLoc, "blob")
             }
-            fs.writeFileSync(".vcs/index.json", JSON.stringify(indexJson))
+
         } else if (file.isSymbolicLink()) {
             console.log("This file is not supported")
         }
     })
+
+    return [indexJson, allDirs]
 }

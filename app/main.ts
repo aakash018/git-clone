@@ -5,6 +5,7 @@ import zlib from "zlib"
 import { add } from './helpers/write-tree';
 import { getStatus } from './commands/status';
 import { commit } from './commands/commit';
+import chalk from "chalk";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -65,7 +66,16 @@ switch (command) {
         }
         break
     case Commands.Add:
-        add({ path: "." })
+        let [indexJson, allDirs]: any[] = add({ path: "." })
+        indexJson.forEach((index: any) => {
+            if (!allDirs.includes(index.path)) {
+                console.log(chalk.red("deleted", index.path))
+                const filtered = indexJson.filter((ind: any) => ind.path !== index.path)
+                indexJson = filtered
+            }
+        })
+
+        fs.writeFileSync(".vcs/index.json", JSON.stringify(indexJson))
         break
     case Commands.Status:
         getStatus(".")

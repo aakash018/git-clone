@@ -36,5 +36,8 @@ export const getStatus = (path: string) => {
             }
         }
     })
-
+    const changeStatus = {
+        added: [],
+        modified: []
+    }
 }
