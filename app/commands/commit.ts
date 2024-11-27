@@ -20,7 +20,7 @@ if (fs.existsSync(indexPath)) {
     indexJson = [] // or handle it as needed
 }
 
-interface CommitStatus {
+export interface CommitStatus {
     added: string[],
     modified: string[],
     deleted: string[]
@@ -47,7 +47,7 @@ export const commit = (message: string) => {
             indexJson.map((entry) => [entry.path.split("/").pop(), entry.hash])
         )
         const allFilesInCommit: { name: string, hash: string }[] = [];
-        compareCommitAndStage(allFilesInCommit, lastCommitTreeHash, indexJsonMap)
+        compareCommitAndStage(commitStatus, allFilesInCommit, lastCommitTreeHash, indexJsonMap)
 
         const allFilesCommitMap = new Map(
             allFilesInCommit.map((entry) => [entry.name, `${entry.hash}`])
@@ -82,7 +82,7 @@ export const commit = (message: string) => {
     if (!commitTreeHash) {
         return console.error("Error trying to commit")
     }
-    makeCommitObject(message, commitTreeHash)
+    makeCommitObject(message, commitTreeHash, oldHash)
 
     commitStatus.added.forEach(com => (
         console.log(chalk.green("create mode", com))
@@ -95,7 +95,7 @@ export const commit = (message: string) => {
     ))
 }
 
-const compareCommitAndStage = (allPastCommittedFiles: { name: string, hash: string }[], mainHash: string, indexMap: Map<any, any>) => {
+export const compareCommitAndStage = (commitStatus: CommitStatus, allPastCommittedFiles: { name: string, hash: string }[], mainHash: string, indexMap: Map<any, any>) => {
 
     const commitTree = readObjects(mainHash)
     const parsedTreeData = treeParser(commitTree.trim())
@@ -104,7 +104,7 @@ const compareCommitAndStage = (allPastCommittedFiles: { name: string, hash: stri
     );
     commitTreeMap.forEach((typeAndHash, fileName) => {
         if (typeAndHash.split(" ")[0] === "tree") {
-            compareCommitAndStage(allPastCommittedFiles, typeAndHash.split(" ")[1], indexMap)
+            compareCommitAndStage(commitStatus, allPastCommittedFiles, typeAndHash.split(" ")[1], indexMap)
         } else {
             if (!indexMap.has(fileName)) {
                 commitStatus.deleted.push(fileName); // File exists in tree but not in index
@@ -118,10 +118,12 @@ const compareCommitAndStage = (allPastCommittedFiles: { name: string, hash: stri
     })
 }
 
-const makeCommitObject = (message: string, treeHash: string) => {
+const makeCommitObject = (message: string, treeHash: string, parrentHash: string) => {
     const content = `tree ${treeHash}
-author ${process.env.VCS_USER_EMAIL}
+parent ${parrentHash}
+author ${process.env.VSC_USER_EMAIL}
 commiter ${process.env.VSC_USER_EMAIL}
+cdate ${new Date().toString()}
 
 ${message}`
     const hash = saveBlobWithContent(content, "commit")

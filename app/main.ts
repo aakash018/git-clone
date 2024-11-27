@@ -3,9 +3,11 @@ import * as fs from 'fs';
 import crypto from "crypto"
 import zlib from "zlib"
 import { add } from './helpers/write-tree';
-import { getStatus } from './commands/status';
+import { diffFromLastCommit, getStatus } from './commands/status';
 import { commit } from './commands/commit';
 import chalk from "chalk";
+import { showLogs } from "./commands/log";
+import { revertCommit } from "./commands/revert";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -17,7 +19,9 @@ enum Commands {
     WriteTree = "write-tree",
     Add = "add",
     Status = "status",
-    Commit = "commit"
+    Commit = "commit",
+    Log = "log",
+    Revert = "revert"
 }
 
 switch (command) {
@@ -79,6 +83,7 @@ switch (command) {
         break
     case Commands.Status:
         getStatus(".")
+        diffFromLastCommit()
         break
     case Commands.Commit:
         const message = args[1]
@@ -87,6 +92,14 @@ switch (command) {
             break
         }
         commit(message)
+        break
+    case Commands.Log:
+        const oldHash = fs.readFileSync(".vcs/refs/heads/main").toString()
+        showLogs(oldHash)
+        break
+    case Commands.Revert:
+        const commitHash = args[1]
+        revertCommit(commitHash)
         break
     default:
         throw new Error(`Unknown command ${command}`);
